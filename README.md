@@ -118,6 +118,108 @@ case, but this can easially be changed by the user using a `.toUpperCase` or
 `.toLowerCase`. The default should be lower case to match existing
 implementations in Node, Go, and `Number.toString(16)`.
 
+## Implementations in other environments
+
+### Node.js
+
+In Node, base64 and hex encoding of byte slices can be done via the `Buffer`
+primitive. Buffers have a `.toString` method that takes an optional argument
+defining the type of encoding to use. For this proposal only `"hex"` and
+`"base64"`, and `"base64url"` are relevant. Streaming is not supported.
+Alternative alphabets are not supported. Disabling of padding is not supported.
+Usage example:
+
+```js
+const buf = Buffer.from("hello world", "utf8");
+buf.toString("hex");
+buf.toString("base64");
+
+const buf2 = Buffer.from("68656c6c6f20776f726c64", "hex");
+buf2.toString("utf8");
+```
+
+### Deno standard library
+
+Deno does not include a base64 or hex decoder in the runtime natively, but it
+does include one in the standard library. It is capable of `base64`,
+`base64url`, and `hex`. Streaming is not supported. Alternative alphabets are
+not supported. Disabling of padding is not supported.
+
+Usage example:
+
+```js
+import * as base64 from "https://deno.land/std@0.98.0/encoding/base64.ts";
+import * as base64url from "https://deno.land/std@0.98.0/encoding/base64url.ts";
+import * as hex from "https://deno.land/std@0.98.0/encoding/hex.ts";
+
+const message = new TextEncoder.encode("hello world");
+
+base64.encode(message); // takes uint8array
+base64.decode("aGVsbG8gd29ybGQ="); // returns uin8array
+
+base64url.encode(message); // takes uint8array
+base64url.decode("aGVsbG8gd29ybGQ="); // returns uin8array
+
+hex.encode(message); // takes uint8array
+hex.decode("68656c6c6f20776f726c64"); // returns uin8array
+```
+
+### Dart
+
+Dart supports base64 and base64url encoding via the standard library. Hex
+encoding is not supported natively, instead the `hex` package on pub.dev is
+recommended. Streaming is supported for base64. Alternative alphabets are not
+supported. Disabling of padding is not supported.
+
+Usage example;
+
+```dart
+import "dart:convert";
+import "package:hex/hex.dart";
+
+base64.encode([0x62, 0x6c, 0xc3, 0xa5, 0x62, 0xc3, 0xa6,
+               0x72, 0x67, 0x72, 0xc3, 0xb8, 0x64]);
+base64.decode("YmzDpWLDpnJncsO4ZAo=");
+
+base64Url.encode([0x62, 0x6c, 0xc3, 0xa5, 0x62, 0xc3, 0xa6,
+                  0x72, 0x67, 0x72, 0xc3, 0xb8, 0x64]);
+base64Url.decode("YmzDpWLDpnJncsO4ZAo=");
+
+HEX.encode([1, 2, 3]); // "010203"
+HEX.decode("010203"); // [1, 2, 3]
+
+// Streaming for base64 is supported via the Base64Encoder and Base64Decoder
+// classes. These are stream combinators for the Dart native streams (we would
+// call them transform streams).
+```
+
+### Go
+
+In Go base64 is implemented with the Go native streaming API (`io.Reader` /
+`io.Writer`). There are two functions, `base64.NewEncoder` and
+`base64.NewDecoder` which can be used to create what we would call transform
+streams. In Go all code is concurrent code (what we would call async), so this
+API can be used with the same versatility as a synchronous encoder / decoder in
+JS. The encoders and decoders take a `Encoding` parameter which specifies the
+alphabet to use. Padding can be enabled and disabled for each encoding.
+
+Usage example:
+
+```go
+// Open the input and output files (these are io.Reader and io.Writer streams)
+in, _ := os.Open("in.txt")
+out, _ := os.Open("out.txt")
+
+// Create a new encoder that outputs to out with the standard base64 encoding
+encoder := base64.NewEncoder(base64.StdEncoding, out)
+
+// Copy the input data into the encoder
+io.Copy(encoder, in)
+
+// The decoder works the same, just with input and output reversed and
+// `base64.NewDecoder` used instead.
+```
+
 ## Proposal
 
 This proposal introduces a new `BinaryEncoder` and `BinaryDecoder` API that can
@@ -128,9 +230,10 @@ these strings back into byte arrays.
 
 This proposal allows for encoding and decoding `base64`, `base64url`, and `hex`
 data. It does not implement streaming support, as this could be later
-implemented in a `BinaryEncoderStream` / `BinaryDecoderStream`. This proposal
-also does not allow disabling of padding for base64, like some other APIs (e.g.
-Go) do.
+implemented in a `BinaryEncoderStream` / `BinaryDecoderStream`, or using the
+same synchronous API as text encoding, using a `stream: true` option on the
+`encode` / `decode` methods. This proposal also does not allow disabling of
+padding for base64, or alternative alphabets.
 
 ```webidl
 enum BinaryEncoding {
@@ -275,3 +378,34 @@ const inner = certificate.substring(
 
 const der = new BinaryDecoder("base64").decode(inner);
 ```
+
+## FAQ
+
+### I want streams!
+
+Streams are interesting, but the most common usecase is not streaming. This
+proposal tries to get consensus for the least controversial and most common
+usecase first, and can then be expanded to streaming later. This could be done
+in a non breaking way in the same way as streaming support for text encoder:
+`BinaryEncoderStream` / `BinaryDecoderStream`, or using the same synchronous API
+as text encoding, using a `stream: true` option on the `encode` / `decode`
+methods.
+
+### Can this be combined into the TextEncoding / TextDecoding interfaces?
+
+In theory yes, but in practice it doesn't make much sense. In text encoding the
+binary representation is the "encoded" form, while in binary encoding the text
+form is the "encoded" form. Because of this, encoding some binary data to a
+base64 string would actually use the text decoder interface as it is the one
+that translates **from** byte array **to** string.
+
+### Why is X encoding not supported?
+
+This is a first pass with just the 3 most common encodings. Support for
+"base62", "base32", and various other encodings can be added after initial
+consensus and implementation.
+
+### Is this feature poly-fillable?
+
+Yes! In fact there is a polyfill in this repo in the polyfill/ folder. The
+polyfill is 1.3 kb gzipped.
