@@ -2,6 +2,16 @@
 
 A proposal to add modern, easy to use binary encoders to the web platform.
 
+- [Problem](#problem)
+- [Implementations in other environments](#implementations-in-other-environments)
+  - [Node.js](#nodejs)
+  - [Deno standard library](#deno-standard-library)
+  - [Dart](#dart)
+  - [Go](#go)
+- [Proposal](#proposal)
+  - [Examples](#examples)
+  - [FAQ](#faq)
+
 ## Problem
 
 Many protocols, APIs, and algorithms require that some binary data (byte array)
@@ -397,7 +407,7 @@ In theory yes, but in practice it doesn't make much sense. In text encoding the
 binary representation is the "encoded" form, while in binary encoding the text
 form is the "encoded" form. Because of this, encoding some binary data to a
 base64 string would actually use the text decoder interface as it is the one
-that translates **from** byte array **to** string.
+that translates **from** byte array **to** string. This is not intuitive.
 
 ### Why is X encoding not supported?
 
@@ -408,4 +418,4 @@ consensus and implementation.
 ### Is this feature poly-fillable?
 
 Yes! In fact there is a polyfill in this repo in the polyfill/ folder. The
-polyfill is 1.3 kb gzipped.
+polyfill is 1.3 kb gzipped and could likely be made a lot smaller.
