@@ -419,3 +419,19 @@ consensus and implementation.
 
 Yes! In fact there is a polyfill in this repo in the polyfill/ folder. The
 polyfill is 1.3 kb gzipped and could likely be made a lot smaller.
+
+### `hex` or `base16`?
+
+`hex` is definitely the common name. See
+[Java](https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html#toHexString-long-),
+[Go](https://golang.org/pkg/encoding/hex/),
+[Python](https://docs.python.org/3/library/functions.html#hex). Outside of
+[RFC4648](https://datatracker.ietf.org/doc/html/rfc4648#section-8) it is not
+commonly called "base 16".
+
+Some real world data from Sourcegraph to back this up:
+
+- [123.4k results](https://sourcegraph.com/search?q=context:global+lang:javascript+%22hex%22+count:all&patternType=literal)
+  for "hex".
+- [73 results](https://sourcegraph.com/search?q=context:global+lang:javascript+%22base16%22+count:all&patternType=literal)
+  for "base16".
