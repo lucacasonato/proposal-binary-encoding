@@ -1,6 +1,8 @@
 # proposal-binary-encoding
 
-A proposal to add modern, easy to use binary encoders to the web platform.
+A proposal to add modern, easy to use binary encoders to the web platform. This
+is proposed as an addition to the HTML spec, not the ECMAScript language
+specification.
 
 - [Problem](#problem)
 - [Implementations in other environments](#implementations-in-other-environments)
